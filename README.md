@@ -10,3 +10,15 @@ uniswap by using ethers, serverless, uniswap v3 sdk and core...
 2. [install serverless](https://www.serverless.com/framework/docs/getting-started/) `curl -o- -L https://slss.io/install | bash`
 3. type `sls` in terminal and set project
 4. `npm install`
+
+# config
+```
+module.exports.config = {
+  prod: {
+    infuraProjectId: '',
+  },
+  dev: {
+    infuraProjectId: '', 
+  },
+}
+```
