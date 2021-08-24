@@ -1,11 +1,10 @@
 const { expect } = require('chai');
 const { Infura } = require('../core/infura');
-
 const { setConfig } = require('./setConfig');
 
 setConfig();
 
-describe('infura', () => {
+describe('Infura', () => {
   describe('getCoinBalanceOfWallet', () => {
     it('should return number when success', (done) => {
       const InfuraIns = new Infura();

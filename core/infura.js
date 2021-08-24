@@ -22,7 +22,6 @@ class Infura {
   }
 
   async getCoinBalanceOfWallet(address) {
-    // contract instance 생성, walletaddress 넣어서 개수 가져오기
     try {
       this.readOnlyContract = new ethers.Contract(address, erc20Abi, this.provider);
       let balance = await this.readOnlyContract.balanceOf(this.walletAddress);
