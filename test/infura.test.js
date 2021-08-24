@@ -16,4 +16,15 @@ describe('infura', () => {
       }).catch(done);
     });
   });
+
+  describe('getWalletBalance', () => {
+    it.only('should return number when success', (done) => {
+      const InfuraIns = new Infura();
+      InfuraIns.getWalletBalance().then((result) => {
+        expect(result).to.be.a('number');
+        console.log(result);
+        done();
+      }).catch(done);
+    });
+  });
 });

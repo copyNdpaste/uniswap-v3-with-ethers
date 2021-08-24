@@ -35,6 +35,14 @@ class Infura {
     }
   }
 
+  async getWalletBalance() {
+    let balance = await this.provider.getBalance(this.walletAddress);
+    balance = ethers.utils.formatEther(balance);
+    balance = parseFloat(balance);
+
+    return balance;
+  }
+
   makePool(token0, token1) {
     const feeAmount = FeeAmount.MEDIUM;
     const sqrtRatioX96 = encodeSqrtRatioX96(1, 1);
