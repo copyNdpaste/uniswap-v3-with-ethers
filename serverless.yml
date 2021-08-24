@@ -4,11 +4,26 @@ service: uniswap-v3-with-ethers
 
 frameworkVersion: '2'
 
+custom:
+  stage: ${self:provider.stage} # sls deploy 시 설정된 stage 지정
+  config: ${file(./config/config.js):config}
 
 provider:
   name: aws
   runtime: nodejs12.x
   lambdaHashingVersion: 20201221
+  stage: ${opt:stage, 'dev'}
+  environment:
+    NODE_ENV: ${self:custom.config.${self:custom.stage}.NODE_ENV}
+    infuraProjectId: ${self:custom.config.${self:custom.stage}.infuraProjectId}
+    infuraProjectSecret: ${self:custom.config.${self:custom.stage}.infuraProjectSecret}
+    network: ${self:custom.config.${self:custom.stage}.network}
+    routerAddress: ${self:custom.config.${self:custom.stage}.uniswapV3RouterAddress} 
+    chainId: ${self:custom.config.${self:custom.stage}.chainId} 
+    daiContractAddress: ${self:custom.config.${self:custom.stage}.daiContractAddress}
+    uniContractAddress: ${self:custom.config.${self:custom.stage}.uniContractAddress} 
+    etherContractAddress: ${self:custom.config.${self:custom.stage}.etherContractAddress}
+    privateKey: ${self:custom.config.${self:custom.stage}.privateKey}
 
 functions:
   rateHandler:
