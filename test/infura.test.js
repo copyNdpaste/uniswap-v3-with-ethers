@@ -18,7 +18,7 @@ describe('infura', () => {
   });
 
   describe('getWalletBalance', () => {
-    it.only('should return number when success', (done) => {
+    it('should return number when success', (done) => {
       const InfuraIns = new Infura();
       InfuraIns.getWalletBalance().then((result) => {
         expect(result).to.be.a('number');
