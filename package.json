@@ -1,0 +1,14 @@
+{
+  "name": "uniswap-v3-with-ethers",
+  "version": "1.0.0",
+  "description": "Example of creating a function that runs as a cron job using the serverless `schedule` event",
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.1.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
+}
