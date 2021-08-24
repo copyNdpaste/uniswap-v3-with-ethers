@@ -11,7 +11,7 @@ uniswap by using ethers, serverless, uniswap v3 sdk and core...
 3. type `sls` in terminal and set project
 4. `npm install`
 
-# config
+# Config
 ```
 module.exports.config = {
   prod: {
@@ -22,3 +22,8 @@ module.exports.config = {
   },
 }
 ```
+
+# Run test
+`npm run test`
+
+if you want to run or skip specific test use only(), skip()
