@@ -131,7 +131,7 @@ class Infura {
       });
 
       const slippageTolerance = new Percent(1, 100);
-      const recipient = process.env.publicKey;
+      const recipient = this.walletAddress;
       const date = new Date();
       const deadline = parseInt(date.setMinutes(date.getMinutes() + 30) / 1000, 10);
       const { calldata } = SwapRouter.swapCallParameters(uncheckedTradeExample, {
