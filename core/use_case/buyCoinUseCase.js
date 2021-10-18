@@ -27,7 +27,7 @@ class BuyCoinUseCase {
 
       console.log(`before buy daiBalance : ${this.daiBalance}, etherBalance ${this.etherBalance}`);
 
-      await this.Infura.transfer(this.daiContractAddress, this.uniContractAddress, 0.01);
+      await this.Infura.transfer(1);
 
       return true;
     } catch (error) {

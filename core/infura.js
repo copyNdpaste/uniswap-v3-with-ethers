@@ -2,12 +2,13 @@
 /* eslint-disable class-methods-use-this */
 const { ethers } = require('ethers');
 const {
-  Pool, Trade, Route, FeeAmount, encodeSqrtRatioX96, TickMath,
-  nearestUsableTick, TICK_SPACINGS, SwapRouter,
+  Route, Pool, Trade, SwapRouter,
 } = require('@uniswap/v3-sdk');
 const {
-  Token, Percent, CurrencyAmount, TradeType,
+  CurrencyAmount, Token, TradeType, Percent,
 } = require('@uniswap/sdk-core');
+const { abi: IUniswapV3PoolABI } = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json');
+const { abi: QuoterABI } = require('@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json');
 const erc20Abi = require('../erc20Abi.json');
 
 class Infura {
@@ -19,6 +20,10 @@ class Infura {
     this.signer = new ethers.Wallet(process.env.privateKey, this.provider);
     this.walletAddress = this.signer.address;
     this.readOnlyContract;
+
+    this.rpcProvider = new ethers.providers.JsonRpcProvider(
+      process.env.infuraJsonRpcHttps + process.env.infuraProjectId,
+    );
   }
 
   async getCoinBalanceOfWallet(address) {
@@ -42,27 +47,6 @@ class Infura {
     return balance;
   }
 
-  makePool(token0, token1) {
-    const feeAmount = FeeAmount.MEDIUM;
-    const sqrtRatioX96 = encodeSqrtRatioX96(1, 1);
-    const liquidity = 1_000_000;
-    return new Pool(
-      token0, token1, feeAmount, sqrtRatioX96, liquidity, TickMath.getTickAtSqrtRatio(sqrtRatioX96),
-      [
-        {
-          index: nearestUsableTick(TickMath.MIN_TICK, TICK_SPACINGS[feeAmount]),
-          liquidityNet: liquidity,
-          liquidityGross: liquidity,
-        },
-        {
-          index: nearestUsableTick(TickMath.MAX_TICK, TICK_SPACINGS[feeAmount]),
-          liquidityNet: -liquidity,
-          liquidityGross: liquidity,
-        },
-      ],
-    );
-  }
-
   async sendTransaction(routerAddress, data) {
     try {
       return await this.signer.sendTransaction({
@@ -74,32 +58,89 @@ class Infura {
     }
   }
 
-  async transfer(token0Address, token1Address, buyCount) {
+  async transfer(buyCount) {
     try {
-      const chainId = parseInt(process.env.chainId, 10);
-      const decimals = 18;
-      const token0 = new Token(chainId, token0Address, decimals);
-      const token1 = new Token(chainId, token1Address, decimals);
+      const poolAddress = 'WRITE POOL ADDRESS';
+      console.log(`transferOnUniswap : poolAddress : ${poolAddress}`);
+
+      const poolContract = new ethers.Contract(
+        poolAddress,
+        IUniswapV3PoolABI,
+        this.rpcProvider,
+      );
+
+      const quoterAddress = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+
+      const quoterContract = new ethers.Contract(
+        quoterAddress, QuoterABI, this.rpcProvider,
+      );
+
+      // query the state and immutable variables of the pool
+      const [immutables, state] = await Promise.all([
+        this.getPoolImmutables(poolContract),
+        this.getPoolState(poolContract),
+      ]);
+
+      // create instances of the Token object to represent the two tokens in the given pool
+      const dai = new Token(
+        parseInt(process.env.chainId, 10), immutables.token1, 18, 'DAI', 'Dai Stablecoin',
+      );
+      const uni = new Token(
+        parseInt(process.env.chainId, 10), immutables.token0, 18, 'UNI', 'Uniswap',
+      );
+
+      console.log(`Dai : ${JSON.stringify(dai)}, Uni : ${JSON.stringify(uni)}`);
+
+      // create an instance of the pool object for the given pool
+      const poolExample = new Pool(
+        uni,
+        dai,
+        immutables.fee,
+        // note the description discrepancy:sqrtPriceX96 and sqrtRatioX96 are interchangable values
+        state.sqrtPriceX96.toString(),
+        state.liquidity.toString(),
+        state.tick,
+      );
+
+      // assign an input amount for the swap
+      const amountIn = ethers.utils.parseEther(String(buyCount));
+
+      // call the quoter contract to determine the amount out of a swap, given an amount in
+      const quotedAmountOut = await quoterContract.callStatic.quoteExactInputSingle(
+        immutables.token1,
+        immutables.token0,
+        immutables.fee,
+        amountIn.toString(),
+        0,
+      );
+
+      console.log(`quotedAmountOut : ${quotedAmountOut.toString()}`);
+
+      // create an instance of the route object in order to construct a trade object
+      const swapRoute = new Route([poolExample], dai, uni);
+
+      // create an unchecked trade instance
+      const uncheckedTradeExample = await Trade.createUncheckedTrade({
+        route: swapRoute,
+        inputAmount: CurrencyAmount.fromRawAmount(dai, amountIn.toString()),
+        outputAmount: CurrencyAmount.fromRawAmount(
+          uni,
+          quotedAmountOut.toString(),
+        ),
+        tradeType: TradeType.EXACT_INPUT,
+      });
 
       const slippageTolerance = new Percent(1, 100);
       const recipient = this.walletAddress;
       const date = new Date();
-      const deadline = date.setMinutes(date.getMinutes() + 30);
-
-      const count = ethers.utils.parseUnits(String(buyCount), 18);
-      const pool = this.makePool(token0, token1);
-      const trade = await Trade.fromRoute(
-        new Route([pool], token0, token1),
-        CurrencyAmount.fromRawAmount(token0, count),
-        TradeType.EXACT_INPUT,
-      );
-      const { calldata } = SwapRouter.swapCallParameters(trade, {
+      const deadline = parseInt(date.setMinutes(date.getMinutes() + 30) / 1000, 10);
+      const { calldata } = SwapRouter.swapCallParameters(uncheckedTradeExample, {
         slippageTolerance,
         recipient,
         deadline,
       });
 
-      const result = await this.sendTransaction(process.env.routerAddress, calldata);
+      const result = await this.sendTransaction(process.env.uniswapV3RouterAddress, calldata);
 
       console.log(`transfer finish. result: ${JSON.stringify(result)}`);
       return true;
