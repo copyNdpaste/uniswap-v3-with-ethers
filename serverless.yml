@@ -18,7 +18,7 @@ provider:
     infuraProjectId: ${self:custom.config.${self:custom.stage}.infuraProjectId}
     infuraProjectSecret: ${self:custom.config.${self:custom.stage}.infuraProjectSecret}
     network: ${self:custom.config.${self:custom.stage}.network}
-    routerAddress: ${self:custom.config.${self:custom.stage}.uniswapV3RouterAddress} 
+    uniswapV3RouterAddress: ${self:custom.config.${self:custom.stage}.uniswapV3RouterAddress} 
     chainId: ${self:custom.config.${self:custom.stage}.chainId} 
     daiContractAddress: ${self:custom.config.${self:custom.stage}.daiContractAddress}
     uniContractAddress: ${self:custom.config.${self:custom.stage}.uniContractAddress} 

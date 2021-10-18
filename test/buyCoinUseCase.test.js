@@ -7,7 +7,7 @@ setConfig();
 
 describe('BuyCoinUseCase', () => {
   describe('execute', () => {
-    it.only('should return true when success', (done) => {
+    it('should return true when success', (done) => {
       const usecase = new BuyCoinUseCase();
       usecase.execute().then((result) => {
         expect(result).to.be.eq(true);
